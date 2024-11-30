@@ -1,0 +1,5 @@
+{
+  "watch": ["*", "template.yaml"],
+  "ext": "ts",
+  "exec": "bash tools/hot-reload.sh"
+}

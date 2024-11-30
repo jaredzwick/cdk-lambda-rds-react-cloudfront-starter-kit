@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import { Mail, Phone, Lock, ArrowRight } from 'lucide-react';
+import { useState } from "react";
+import { Mail, Phone, ArrowRight } from "lucide-react";
 
 export function Auth() {
   const [isSignIn, setIsSignIn] = useState(true);
-  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
+  const [authMethod, setAuthMethod] = useState<"email" | "phone">("email");
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-          {isSignIn ? 'Sign in to your account' : 'Create your account'}
+          {isSignIn ? "Sign in to your account" : "Create your account"}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           {isSignIn ? "Don't have an account? " : "Already have an account? "}
@@ -17,7 +17,7 @@ export function Auth() {
             onClick={() => setIsSignIn(!isSignIn)}
             className="font-medium text-indigo-600 hover:text-indigo-500"
           >
-            {isSignIn ? 'Sign up' : 'Sign in'}
+            {isSignIn ? "Sign up" : "Sign in"}
           </button>
         </p>
       </div>
@@ -28,22 +28,22 @@ export function Auth() {
             {/* Auth Method Selector */}
             <div className="flex space-x-4 mb-6">
               <button
-                onClick={() => setAuthMethod('email')}
+                onClick={() => setAuthMethod("email")}
                 className={`flex-1 py-2 px-4 text-sm font-medium rounded-md ${
-                  authMethod === 'email'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                  authMethod === "email"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-900 hover:bg-gray-200"
                 }`}
               >
                 <Mail className="w-4 h-4 inline-block mr-2" />
                 Email
               </button>
               <button
-                onClick={() => setAuthMethod('phone')}
+                onClick={() => setAuthMethod("phone")}
                 className={`flex-1 py-2 px-4 text-sm font-medium rounded-md ${
-                  authMethod === 'phone'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                  authMethod === "phone"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-900 hover:bg-gray-200"
                 }`}
               >
                 <Phone className="w-4 h-4 inline-block mr-2" />
@@ -53,15 +53,18 @@ export function Auth() {
 
             {/* Email/Phone Input */}
             <div>
-              <label htmlFor="contact" className="block text-sm font-medium text-gray-700">
-                {authMethod === 'email' ? 'Email address' : 'Phone number'}
+              <label
+                htmlFor="contact"
+                className="block text-sm font-medium text-gray-700"
+              >
+                {authMethod === "email" ? "Email address" : "Phone number"}
               </label>
               <div className="mt-1">
                 <input
                   id="contact"
                   name="contact"
-                  type={authMethod === 'email' ? 'email' : 'tel'}
-                  autoComplete={authMethod === 'email' ? 'email' : 'tel'}
+                  type={authMethod === "email" ? "email" : "tel"}
+                  autoComplete={authMethod === "email" ? "email" : "tel"}
                   required
                   className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
                 />
@@ -70,7 +73,10 @@ export function Auth() {
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Password
               </label>
               <div className="mt-1">
@@ -95,13 +101,19 @@ export function Auth() {
                     type="checkbox"
                     className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                   />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                  <label
+                    htmlFor="remember-me"
+                    className="ml-2 block text-sm text-gray-900"
+                  >
                     Remember me
                   </label>
                 </div>
 
                 <div className="text-sm">
-                  <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
+                  <a
+                    href="#"
+                    className="font-medium text-indigo-600 hover:text-indigo-500"
+                  >
                     Forgot your password?
                   </a>
                 </div>
@@ -114,7 +126,7 @@ export function Auth() {
                 type="submit"
                 className="flex w-full justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               >
-                {isSignIn ? 'Sign in' : 'Create account'}
+                {isSignIn ? "Sign in" : "Create account"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </button>
             </div>
@@ -126,7 +138,9 @@ export function Auth() {
                   <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="bg-white px-2 text-gray-500">Or continue with</span>
+                  <span className="bg-white px-2 text-gray-500">
+                    Or continue with
+                  </span>
                 </div>
               </div>
 
