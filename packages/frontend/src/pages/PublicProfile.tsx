@@ -7,7 +7,7 @@ import { PublicProfileAvailability } from "../components/public-profile/PublicPr
 
 export function PublicProfile() {
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <PublicProfileHeader />
         <div className="mt-8 grid gap-8 grid-cols-1 lg:grid-cols-3">

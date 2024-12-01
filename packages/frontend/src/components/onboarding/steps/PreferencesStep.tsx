@@ -1,3 +1,4 @@
+import React from "react";
 import { Users, Heart } from "lucide-react";
 import { OnboardingFormData } from "../../../types/onboarding";
 import { FemaleIcon, MaleIcon } from "../../icons/gender";
@@ -30,20 +31,24 @@ export function PreferencesStep({
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-900">
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
         Who would you like to cuddle with?
       </h2>
-      <p className="mt-2 text-sm text-gray-600">
+      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
         Select all that apply. You can always change this later.
       </p>
       <div className="mt-6 space-y-4">
         {preferenceOptions.map((option) => (
           <label
             key={option.value}
-            className={`block relative rounded-lg border p-4 cursor-pointer hover:border-indigo-500 ${
+            className={`block relative rounded-lg border p-4 cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-400 dark:text-white ${
               formData.preferences?.includes(option.value)
-                ? "border-indigo-600 ring-2 ring-indigo-600"
-                : "border-gray-300"
+                ? "border-indigo-600 dark:border-indigo-500 ring-2 ring-indigo-600 dark:ring-indigo-500"
+                : "border-gray-300 dark:border-gray-600"
+            } ${
+              formData.preferences?.includes(option.value)
+                ? "bg-indigo-50 dark:bg-indigo-900/50"
+                : "bg-white dark:bg-gray-800"
             }`}
           >
             <input
@@ -54,15 +59,29 @@ export function PreferencesStep({
               className="sr-only"
             />
             <div className="flex items-center">
-              <option.icon className="h-5 w-5 text-gray-400 mr-3" />
-              <span className="text-sm font-medium text-gray-900">
+              <option.icon
+                className={`h-5 w-5 mr-3 ${
+                  formData.preferences?.includes(option.value)
+                    ? "text-indigo-600 dark:text-white"
+                    : "text-gray-400 dark:text-gray-500"
+                }`}
+              />
+              <span
+                className={`text-sm font-medium ${
+                  formData.preferences?.includes(option.value)
+                    ? "text-indigo-600 dark:text-white"
+                    : "text-gray-900 dark:text-white"
+                }`}
+              >
                 {option.label}
               </span>
             </div>
           </label>
         ))}
       </div>
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && (
+        <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>
+      )}
     </div>
   );
 }

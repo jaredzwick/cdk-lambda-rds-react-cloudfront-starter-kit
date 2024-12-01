@@ -3,7 +3,6 @@ import { HowItWorks } from "../components/HowItWorks";
 import { FeaturedCuddlers } from "../components/FeaturedCuddlers";
 import { BecomeCuddler } from "../components/BecomeCuddler";
 import { Header } from "../components/Header";
-import { Footer } from "../components/Footer";
 
 export function Home() {
   return (
@@ -15,7 +14,6 @@ export function Home() {
         <FeaturedCuddlers />
         <BecomeCuddler />
       </main>
-      <Footer />
     </div>
   );
 }

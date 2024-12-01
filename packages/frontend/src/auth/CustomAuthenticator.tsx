@@ -1,7 +1,8 @@
-import { Authenticator, View } from "@aws-amplify/ui-react";
+import { Authenticator, useAuthenticator, View } from "@aws-amplify/ui-react";
 import { Amplify } from "aws-amplify";
 import { outputs } from "./Amplify";
 import "@aws-amplify/ui-react/styles.css";
+import { Navigate } from "react-router-dom";
 
 // @ts-expect-error amplify is so fucked
 Amplify.configure(outputs);
@@ -42,5 +43,9 @@ const components = {
 };
 
 export const CustomAuthenticator = () => {
+  const { user } = useAuthenticator((context) => [context.user]);
+  if (user) {
+    return <Navigate to="/dashboard" />;
+  }
   return <Authenticator components={components}></Authenticator>;
 };

@@ -1,3 +1,4 @@
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { OnboardingSteps } from "../components/onboarding/OnboardingSteps";
 import { OnboardingProgress } from "../components/onboarding/OnboardingProgress";
@@ -29,10 +30,10 @@ export function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
       <div className="max-w-2xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <OnboardingProgress currentStep={currentStep} />
-        <div className="mt-8 bg-white rounded-lg shadow-sm p-6 sm:p-8">
+        <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 sm:p-8">
           <form onSubmit={handleSubmit}>
             <OnboardingSteps
               currentStep={currentStep}
@@ -45,14 +46,14 @@ export function Onboarding() {
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
                 >
                   Back
                 </button>
               )}
               <button
                 type="submit"
-                className="ml-auto px-6 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                className="ml-auto px-6 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md hover:bg-indigo-500 dark:hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
               >
                 {isLastStep ? "Complete Profile" : "Continue"}
               </button>

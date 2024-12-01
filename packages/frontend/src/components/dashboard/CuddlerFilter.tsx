@@ -3,15 +3,17 @@ import { Sliders, Users, Clock, DollarSign } from "lucide-react";
 
 export function CuddlerFilters() {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
       <div className="flex items-center gap-2 mb-6">
-        <Sliders className="h-5 w-5 text-gray-400" />
-        <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+        <Sliders className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Filters
+        </h2>
       </div>
 
       {/* Gender Filter */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Gender
         </label>
         <div className="space-y-2">
@@ -19,9 +21,11 @@ export function CuddlerFilters() {
             <label key={gender} className="flex items-center">
               <input
                 type="checkbox"
-                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700"
               />
-              <span className="ml-2 text-sm text-gray-600">{gender}</span>
+              <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                {gender}
+              </span>
             </label>
           ))}
         </div>
@@ -29,7 +33,7 @@ export function CuddlerFilters() {
 
       {/* Availability Filter */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Availability
         </label>
         <div className="space-y-2">
@@ -37,9 +41,11 @@ export function CuddlerFilters() {
             <label key={time} className="flex items-center">
               <input
                 type="checkbox"
-                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700"
               />
-              <span className="ml-2 text-sm text-gray-600">{time}</span>
+              <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                {time}
+              </span>
             </label>
           ))}
         </div>
@@ -47,7 +53,7 @@ export function CuddlerFilters() {
 
       {/* Price Range */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Price Range (per hour)
         </label>
         <div className="space-y-4">
@@ -57,9 +63,9 @@ export function CuddlerFilters() {
             max="200"
             step="10"
             defaultValue="60"
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
           />
-          <div className="flex justify-between text-sm text-gray-600">
+          <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
             <span>$20</span>
             <span>$200</span>
           </div>
@@ -68,10 +74,10 @@ export function CuddlerFilters() {
 
       {/* Distance */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Distance
         </label>
-        <select className="w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+        <select className="w-full border-gray-300 dark:border-gray-600 rounded-md focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-300">
           <option>Within 5 miles</option>
           <option>Within 10 miles</option>
           <option>Within 25 miles</option>

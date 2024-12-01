@@ -16,7 +16,7 @@ export function MessageInput({ value, onChange, onSend }: MessageInputProps) {
   };
 
   return (
-    <div className="p-4 border-t border-gray-200">
+    <div className="p-4 border-t border-gray-200 dark:border-gray-700">
       <div className="flex items-end gap-4">
         <div className="flex-1 min-w-0">
           <textarea
@@ -24,21 +24,21 @@ export function MessageInput({ value, onChange, onSend }: MessageInputProps) {
             onChange={(e) => onChange(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type a message..."
-            className="w-full resize-none rounded-lg border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 p-3"
+            className="w-full resize-none rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500 p-3 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
             rows={1}
           />
         </div>
         <div className="flex items-center gap-2">
-          <button className="p-2 text-gray-400 hover:text-gray-600">
+          <button className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
             <Image className="h-5 w-5" />
           </button>
-          <button className="p-2 text-gray-400 hover:text-gray-600">
+          <button className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
             <Paperclip className="h-5 w-5" />
           </button>
           <button
             onClick={onSend}
             disabled={!value.trim()}
-            className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 dark:hover:bg-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="h-5 w-5" />
           </button>
