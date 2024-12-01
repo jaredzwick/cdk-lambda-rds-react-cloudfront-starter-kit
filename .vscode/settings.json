@@ -8,7 +8,7 @@
         "**/Thumbs.db": true,
         "**/**.js": true,
         "**/**.d.ts": true,
-        "**/bin/**": true,
+        // "**/bin/**": true,
         "**/cdk.out/": true,
         "**/node_modules": true,
         "**/cdk.context.json": true,
