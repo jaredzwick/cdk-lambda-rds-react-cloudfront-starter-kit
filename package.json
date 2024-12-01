@@ -3,14 +3,17 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "npm run dev -w packages/frontend & npm run dev -w packages/backend",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "docker compose up -d & npm run dev -w packages/frontend & npm run dev -w packages/backend",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "create-db-migration": "npm run create-db-migration -w packages/backend"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "workspaces": [
     "packages/frontend",
-    "packages/backend"
+    "packages/backend",
+    "infra",
+    "packages/infra"
   ]
 }
