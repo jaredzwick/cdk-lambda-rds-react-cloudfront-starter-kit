@@ -1,3 +1,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.amplify-button {
+  background: #3949ab;
+}
+
+.amplify-field__show-password {
+  background: white;
+}
+.amplify-field__show-password:hover {
+  background: lightgray;
+}
+
+.amplify-button--small {
+  background: white;
+  color: #3949ab;
+}
+.amplify-button--small:hover {
+  background: lightgray;
+}
+
+.amplify-tabs__item--active {
+  border-color: #3949ab;
+  color: #3949ab;
+}
