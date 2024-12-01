@@ -7,6 +7,7 @@ import * as nodeLambda from "aws-cdk-lib/aws-lambda-nodejs";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as apigatewayv2Authorizers from "aws-cdk-lib/aws-apigatewayv2-authorizers";
 
 export class BackendStack extends cdk.Stack {
   public readonly apiUrl: string;
@@ -49,10 +50,26 @@ export class BackendStack extends cdk.Stack {
         runtime: cdk.aws_lambda.Runtime.NODEJS_20_X,
         entry: "lambda/handlers/getItem.ts",
         handler: "handler",
+        tracing: cdk.aws_lambda.Tracing.ACTIVE, // Enable X-Ray tracing
         environment: {
           DB_SECRET_ARN: dbSecret.secretArn,
           DB_CLUSTER_ARN: cluster.clusterArn,
           DB_NAME: "postgres",
+        },
+        bundling: {
+          minify: true,
+          sourceMap: true,
+          keepNames: true,
+          format: nodeLambda.OutputFormat.ESM,
+          sourcesContent: true,
+          mainFields: ["module", "main"],
+          externalModules: [], // we bundle all the dependencies
+          esbuildArgs: {
+            "--tree-shaking": "true",
+          },
+          // We include this polyfill to support `require` in ESM due to AWS X-Ray SDK for Node.js not being ESM compatible
+          banner:
+            'import { createRequire } from "module";const require = createRequire(import.meta.url);',
         },
       }
     );
@@ -67,11 +84,7 @@ export class BackendStack extends cdk.Stack {
 
     const httpApi = new apigatewayv2.HttpApi(this, "ItemsApi");
 
-    httpApi.addRoutes({
-      path: "/items/{id}",
-      methods: [apigatewayv2.HttpMethod.GET],
-      integration: itemsIntegration,
-    });
+    this.apiUrl = httpApi.apiEndpoint;
 
     const userPool = new cognito.UserPool(this, "CuddleUserPool", {
       userPoolName: "CuddleUserPool",
@@ -97,8 +110,24 @@ export class BackendStack extends cdk.Stack {
         userPassword: true, // Allow password-based authentication
         userSrp: true,
       },
+      oAuth: {
+        scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL],
+      },
     });
-
+    const authorizer = new apigatewayv2Authorizers.HttpUserPoolAuthorizer(
+      "CuddleUserPoolAuthorizer",
+      userPool,
+      {
+        userPoolClients: [userPoolClient],
+        identitySource: ["$request.header.Authorization"],
+      }
+    );
+    httpApi.addRoutes({
+      path: "/items/{id}",
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: itemsIntegration,
+      authorizer,
+    });
     this.userPoolId = userPool.userPoolId;
     this.userPoolClientId = userPoolClient.userPoolClientId;
 
@@ -188,8 +217,6 @@ export class BackendStack extends cdk.Stack {
       value: this.identityPoolId,
       exportName: "IdentityPoolId",
     });
-
-    this.apiUrl = httpApi.apiEndpoint;
 
     new cdk.CfnOutput(this, "ApiUrlOutput", {
       value: this.apiUrl,
