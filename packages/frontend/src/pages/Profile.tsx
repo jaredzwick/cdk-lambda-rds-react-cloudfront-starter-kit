@@ -1,4 +1,3 @@
-import React from "react";
 import { ProfileHeader } from "../components/profile/ProfileHeader";
 import { ProfileForm } from "../components/profile/ProfileForm";
 import { ProfilePictures } from "../components/profile/ProfilePictures";

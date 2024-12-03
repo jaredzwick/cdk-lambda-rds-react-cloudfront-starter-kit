@@ -12,6 +12,7 @@ import { Messages } from "./pages/Messages";
 import { Dashboard } from "./pages/Dashboard";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { Authenticator } from "@aws-amplify/ui-react";
+import { Bookings } from "./pages/Bookings";
 function App() {
   return (
     <ThemeProvider>
@@ -30,6 +31,7 @@ function App() {
                 <Route path="/account-settings" element={<AccountSettings />} />
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/bookings" element={<Bookings />} />
               </Routes>
             </main>
             <Footer />
