@@ -1,58 +1,56 @@
 import {
-  RDSDataClient,
-  ExecuteStatementCommand,
-  ExecuteStatementCommandInput,
-} from "@aws-sdk/client-rds-data";
-
+  SecretsManagerClient,
+  GetSecretValueCommand,
+} from "@aws-sdk/client-secrets-manager";
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from "aws-lambda";
-
+import { Client } from "pg";
 import { Tracer } from "@aws-lambda-powertools/tracer";
 import { captureLambdaHandler } from "@aws-lambda-powertools/tracer/middleware";
 import middy from "@middy/core";
 
-const dbClusterArn = process.env.DB_CLUSTER_ARN;
-const secretArn = process.env.DB_SECRET_ARN;
-const databaseName = process.env.DB_NAME;
-
-const TABLE = "items";
-
-type Item = {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-};
-
 const tracer = new Tracer({ serviceName: "getItemFunction" });
-const rdsClient = tracer.captureAWSv3Client(new RDSDataClient());
 
 export const lambdaHandler = async (
   event: APIGatewayProxyEventV2
 ): Promise<APIGatewayProxyResultV2> => {
   try {
-    console.log("~received request ", event);
+    console.log("~received event ", event);
+    const secretsManagerClient = new SecretsManagerClient({});
 
-    // @ts-ignore
-    let claims = event.requestContext.authorizer?.jwt;
+    // Retrieve the database credentials from Secrets Manager
+    const secretValue = await secretsManagerClient.send(
+      new GetSecretValueCommand({ SecretId: process.env.DB_SECRET_ARN })
+    );
+    console.log("~secretValue ", secretValue);
 
-    console.log("~jwwt ", JSON.stringify(claims));
+    const secret = JSON.parse(secretValue.SecretString!);
+    console.log("~secret ", secret);
 
-    claims = claims.claims;
+    const { username, password } = secret;
+    console.log("~username ", username);
+    console.log("~password ", password);
 
-    if (!claims) {
-      return {
-        statusCode: 403,
-        body: JSON.stringify({ message: "User not authorized" }),
-      };
-    }
-    const userId = claims.sub; // Cognito User Pool ID (unique identifier)
-    const userEmail = claims.email; // User's email address, if available
+    // Configure the PostgreSQL client
+    const client = new Client({
+      host: process.env.DB_URL,
+      user: username,
+      password: password,
+      database: process.env.DB_NAME,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    });
 
-    console.log("Authenticated user:", { userId, userEmail });
+    // Connect to the database
+    await client.connect();
+    const res = await client.query("SELECT NOW()");
+    console.log("Current time from database:", res.rows);
+
+    // Close the connection
+    await client.end();
     return {
       statusCode: 200,
-      body: JSON.stringify(event),
+      body: JSON.stringify(res),
     };
   } catch (error) {
     console.error("Error executing query:", error);

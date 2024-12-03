@@ -1,7 +1,8 @@
-import React from "react";
-import { Users, Search, Calendar } from "lucide-react";
+import { Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export function Hero() {
+  const navigate = useNavigate();
   return (
     <div className="relative pt-16 overflow-hidden bg-white dark:bg-gray-900">
       <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
@@ -19,10 +20,20 @@ export function Hero() {
               safe, trusted environment.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
-              <button className="rounded-md bg-indigo-600 px-6 py-3 text-lg font-semibold text-white shadow-sm hover:bg-indigo-500">
+              <button
+                className="rounded-md bg-indigo-600 px-6 py-3 text-lg font-semibold text-white shadow-sm hover:bg-indigo-500"
+                onClick={() => {
+                  navigate("/dashboard");
+                }}
+              >
                 Find a Cuddler
               </button>
-              <button className="rounded-md bg-indigo-100 dark:bg-indigo-900 px-6 py-3 text-lg font-semibold text-indigo-600 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-800">
+              <button
+                className="rounded-md bg-indigo-100 dark:bg-indigo-900 px-6 py-3 text-lg font-semibold text-indigo-600 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-800"
+                onClick={() => {
+                  navigate("/auth");
+                }}
+              >
                 Become a Cuddler
               </button>
             </div>

@@ -8,6 +8,7 @@ import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as apigatewayv2Authorizers from "aws-cdk-lib/aws-apigatewayv2-authorizers";
+import * as ec2 from "aws-cdk-lib/aws-ec2";
 
 export class BackendStack extends cdk.Stack {
   public readonly apiUrl: string;
@@ -19,6 +20,13 @@ export class BackendStack extends cdk.Stack {
 
     const vpc = new cdk.aws_ec2.Vpc(this, "Vpc", {
       maxAzs: 2,
+      natGateways: 0,
+      subnetConfiguration: [
+        {
+          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+          name: "Isolated",
+        },
+      ],
     });
 
     const dbSecret = new secretsmanager.Secret(this, "Secret", {
@@ -29,18 +37,56 @@ export class BackendStack extends cdk.Stack {
         includeSpace: false,
       },
     });
-
-    const cluster = new rds.DatabaseCluster(this, "Database", {
-      engine: rds.DatabaseClusterEngine.auroraPostgres({
-        version: rds.AuroraPostgresEngineVersion.VER_16_4,
-      }),
-      writer: rds.ClusterInstance.serverlessV2("writerInstance"),
+    new ec2.InterfaceVpcEndpoint(this, "SecretsManagerEndpoint", {
       vpc,
+      service: ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
+      subnets: {
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+      },
+      privateDnsEnabled: true,
+    });
+    // Add STS VPC endpoint (optional for Lambda's IAM role authentication)
+    new ec2.InterfaceVpcEndpoint(this, "StsEndpoint", {
+      vpc,
+      service: ec2.InterfaceVpcEndpointAwsService.STS,
+      subnets: {
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+      },
+      privateDnsEnabled: true,
+    });
+
+    const databaseSecurityGroup = new ec2.SecurityGroup(
+      this,
+      "DatabaseSecurityGroup",
+      { vpc }
+    );
+    // RDS PostgreSQL instance
+    const dbInstance = new rds.DatabaseInstance(this, "PostgreSqlInstance", {
+      engine: rds.DatabaseInstanceEngine.postgres({
+        version: rds.PostgresEngineVersion.VER_16,
+      }),
+      instanceType: ec2.InstanceType.of(
+        ec2.InstanceClass.T4G,
+        ec2.InstanceSize.MICRO
+      ),
+      vpc,
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+      },
+      securityGroups: [databaseSecurityGroup],
+      allocatedStorage: 20,
+      storageType: rds.StorageType.GP2,
+      multiAz: false, // Single-AZ deployment
+      publiclyAccessible: false,
+      backupRetention: cdk.Duration.days(7),
+      deleteAutomatedBackups: true,
+      deletionProtection: false,
       credentials: rds.Credentials.fromSecret(dbSecret),
-      enableDataApi: true,
-      serverlessV2MaxCapacity: 6,
-      serverlessV2MinCapacity: 0.5,
-      defaultDatabaseName: "postgres",
+    });
+
+    // Output the database endpoint
+    new cdk.CfnOutput(this, "DBEndpoint", {
+      value: dbInstance.dbInstanceEndpointAddress,
     });
 
     const rdsAPIFunction = new nodeLambda.NodejsFunction(
@@ -50,10 +96,14 @@ export class BackendStack extends cdk.Stack {
         runtime: cdk.aws_lambda.Runtime.NODEJS_20_X,
         entry: "lambda/handlers/getItem.ts",
         handler: "handler",
+        vpc,
+        vpcSubnets: {
+          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+        },
         tracing: cdk.aws_lambda.Tracing.ACTIVE, // Enable X-Ray tracing
         environment: {
           DB_SECRET_ARN: dbSecret.secretArn,
-          DB_CLUSTER_ARN: cluster.clusterArn,
+          DB_URL: dbInstance.dbInstanceEndpointAddress,
           DB_NAME: "postgres",
         },
         bundling: {
@@ -73,8 +123,15 @@ export class BackendStack extends cdk.Stack {
         },
       }
     );
+    databaseSecurityGroup.addIngressRule(
+      ec2.Peer.securityGroupId(
+        rdsAPIFunction.connections.securityGroups[0].securityGroupId
+      ),
+      ec2.Port.tcp(5432), // Allow PostgreSQL traffic
+      "Allow Lambda access"
+    );
+    dbInstance.connections.addSecurityGroup(databaseSecurityGroup);
 
-    cluster.grantDataApiAccess(rdsAPIFunction);
     dbSecret.grantRead(rdsAPIFunction);
 
     const itemsIntegration = new HttpLambdaIntegration(

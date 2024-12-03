@@ -12,9 +12,11 @@
   "dependencies": {
     "@aws-lambda-powertools/tracer": "^2.10.0",
     "@aws-sdk/client-rds-data": "^3.679.0",
+    "@aws-sdk/client-secrets-manager": "^3.699.0",
     "@middy/core": "^5.5.1",
     "@smithy/service-error-classification": "^3.0.10",
     "@types/aws-lambda": "^8.10.145",
-    "aws-xray-sdk-core": "^3.10.1"
+    "aws-xray-sdk-core": "^3.10.1",
+    "pg": "^8.13.1"
   }
 }
