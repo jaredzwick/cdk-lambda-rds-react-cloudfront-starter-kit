@@ -1,8 +1,11 @@
+import { useAuthenticator } from "@aws-amplify/ui-react";
 import { Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export function Hero() {
   const navigate = useNavigate();
+  const { authStatus } = useAuthenticator();
+  const isAuthenticated = authStatus == "authenticated";
   return (
     <div className="relative pt-16 overflow-hidden bg-white dark:bg-gray-900">
       <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
@@ -28,14 +31,16 @@ export function Hero() {
               >
                 Find a Cuddler
               </button>
-              <button
-                className="rounded-md bg-indigo-100 dark:bg-indigo-900 px-6 py-3 text-lg font-semibold text-indigo-600 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-800"
-                onClick={() => {
-                  navigate("/auth");
-                }}
-              >
-                Become a Cuddler
-              </button>
+              {!isAuthenticated && (
+                <button
+                  className="rounded-md bg-indigo-100 dark:bg-indigo-900 px-6 py-3 text-lg font-semibold text-indigo-600 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-800"
+                  onClick={() => {
+                    navigate("/auth");
+                  }}
+                >
+                  Become a Cuddler
+                </button>
+              )}
             </div>
           </div>
           <div className="lg:w-1/2">
