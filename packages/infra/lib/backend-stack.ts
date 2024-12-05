@@ -15,18 +15,13 @@ export class BackendStack extends cdk.Stack {
   public readonly userPoolId: string;
   public readonly userPoolClientId: string;
   public readonly identityPoolId: string;
+
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const vpc = new cdk.aws_ec2.Vpc(this, "Vpc", {
+    const vpc = new ec2.Vpc(this, "Vpc", {
       maxAzs: 2,
-      natGateways: 0,
-      subnetConfiguration: [
-        {
-          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
-          name: "Isolated",
-        },
-      ],
+      natGateways: 1, // Adding a NAT Gateway for outbound internet access
     });
 
     const dbSecret = new secretsmanager.Secret(this, "Secret", {
@@ -37,30 +32,13 @@ export class BackendStack extends cdk.Stack {
         includeSpace: false,
       },
     });
-    new ec2.InterfaceVpcEndpoint(this, "SecretsManagerEndpoint", {
-      vpc,
-      service: ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
-      subnets: {
-        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
-      },
-      privateDnsEnabled: true,
-    });
-    // Add STS VPC endpoint (optional for Lambda's IAM role authentication)
-    new ec2.InterfaceVpcEndpoint(this, "StsEndpoint", {
-      vpc,
-      service: ec2.InterfaceVpcEndpointAwsService.STS,
-      subnets: {
-        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
-      },
-      privateDnsEnabled: true,
-    });
 
     const databaseSecurityGroup = new ec2.SecurityGroup(
       this,
       "DatabaseSecurityGroup",
       { vpc }
     );
-    // RDS PostgreSQL instance
+
     const dbInstance = new rds.DatabaseInstance(this, "PostgreSqlInstance", {
       engine: rds.DatabaseInstanceEngine.postgres({
         version: rds.PostgresEngineVersion.VER_16,
@@ -71,12 +49,12 @@ export class BackendStack extends cdk.Stack {
       ),
       vpc,
       vpcSubnets: {
-        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
       },
       securityGroups: [databaseSecurityGroup],
       allocatedStorage: 20,
       storageType: rds.StorageType.GP2,
-      multiAz: false, // Single-AZ deployment
+      multiAz: false,
       publiclyAccessible: false,
       backupRetention: cdk.Duration.days(7),
       deleteAutomatedBackups: true,
@@ -84,23 +62,18 @@ export class BackendStack extends cdk.Stack {
       credentials: rds.Credentials.fromSecret(dbSecret),
     });
 
-    // Output the database endpoint
-    new cdk.CfnOutput(this, "DBEndpoint", {
-      value: dbInstance.dbInstanceEndpointAddress,
-    });
-
     const rdsAPIFunction = new nodeLambda.NodejsFunction(
       this,
       "RdsAPIFunction",
       {
         runtime: cdk.aws_lambda.Runtime.NODEJS_20_X,
-        entry: "lambda/handlers/getItem.ts",
+        entry: "lambda/handlers/entry-auth-handler.ts",
         handler: "handler",
         vpc,
         vpcSubnets: {
-          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
         },
-        tracing: cdk.aws_lambda.Tracing.ACTIVE, // Enable X-Ray tracing
+        tracing: cdk.aws_lambda.Tracing.ACTIVE,
         environment: {
           DB_SECRET_ARN: dbSecret.secretArn,
           DB_URL: dbInstance.dbInstanceEndpointAddress,
@@ -123,54 +96,41 @@ export class BackendStack extends cdk.Stack {
         },
       }
     );
+
     databaseSecurityGroup.addIngressRule(
       ec2.Peer.securityGroupId(
         rdsAPIFunction.connections.securityGroups[0].securityGroupId
       ),
-      ec2.Port.tcp(5432), // Allow PostgreSQL traffic
+      ec2.Port.tcp(5432),
       "Allow Lambda access"
     );
+
     dbInstance.connections.addSecurityGroup(databaseSecurityGroup);
 
     dbSecret.grantRead(rdsAPIFunction);
 
-    const itemsIntegration = new HttpLambdaIntegration(
-      "ItemsIntegration",
+    const cuddleAuthedIntegration = new HttpLambdaIntegration(
+      "cuddleAuthedIntegration",
       rdsAPIFunction
     );
-
-    const httpApi = new apigatewayv2.HttpApi(this, "ItemsApi");
-
-    this.apiUrl = httpApi.apiEndpoint;
 
     const userPool = new cognito.UserPool(this, "CuddleUserPool", {
       userPoolName: "CuddleUserPool",
       selfSignUpEnabled: true,
-      signInAliases: {
-        email: true, // Allow sign-in with email
-      },
-      autoVerify: {
-        email: true, // Automatically verify email
-      },
-      standardAttributes: {
-        email: {
-          required: true, // Email is a required attribute
-          mutable: true,
-        },
-      },
-      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY, // Account recovery via email only
+      signInAliases: { email: true },
+      autoVerify: { email: true },
+      standardAttributes: { email: { required: true, mutable: true } },
+      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
     });
 
     const userPoolClient = new cognito.UserPoolClient(this, "UserPoolClient", {
       userPool,
-      authFlows: {
-        userPassword: true, // Allow password-based authentication
-        userSrp: true,
-      },
+      authFlows: { userPassword: true, userSrp: true },
       oAuth: {
         scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL],
       },
     });
+
     const authorizer = new apigatewayv2Authorizers.HttpUserPoolAuthorizer(
       "CuddleUserPoolAuthorizer",
       userPool,
@@ -179,17 +139,20 @@ export class BackendStack extends cdk.Stack {
         identitySource: ["$request.header.Authorization"],
       }
     );
-    httpApi.addRoutes({
-      path: "/items/{id}",
-      methods: [apigatewayv2.HttpMethod.GET],
-      integration: itemsIntegration,
-      authorizer,
+    const httpApi = new apigatewayv2.HttpApi(this, "cuddleAuthedApi", {
+      defaultAuthorizer: authorizer,
+      createDefaultStage: true,
+      apiName: "cuddle-api",
+      defaultIntegration: cuddleAuthedIntegration,
     });
+
+    this.apiUrl = httpApi.apiEndpoint;
+
     this.userPoolId = userPool.userPoolId;
     this.userPoolClientId = userPoolClient.userPoolClientId;
 
     const identityPool = new cognito.CfnIdentityPool(this, "IdentityPool", {
-      allowUnauthenticatedIdentities: true, // Only authenticated users
+      allowUnauthenticatedIdentities: true,
       cognitoIdentityProviders: [
         {
           clientId: userPoolClient.userPoolClientId,
@@ -199,7 +162,7 @@ export class BackendStack extends cdk.Stack {
     });
 
     this.identityPoolId = identityPool.ref;
-    // IAM Role for Authenticated Users
+
     const authenticatedRole = new iam.Role(
       this,
       "CognitoDefaultAuthenticatedRole",
@@ -219,7 +182,6 @@ export class BackendStack extends cdk.Stack {
       }
     );
 
-    // IAM Role for Unauthenticated Users (optional)
     const unauthenticatedRole = new iam.Role(
       this,
       "CognitoDefaultUnauthenticatedRole",
@@ -239,7 +201,6 @@ export class BackendStack extends cdk.Stack {
       }
     );
 
-    // Attach Policies to Roles
     authenticatedRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonCognitoPowerUser")
     );
@@ -247,7 +208,6 @@ export class BackendStack extends cdk.Stack {
       iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonCognitoReadOnly")
     );
 
-    // Attach Roles to Identity Pool
     new cognito.CfnIdentityPoolRoleAttachment(
       this,
       "IdentityPoolRoleAttachment",

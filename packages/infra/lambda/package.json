@@ -14,6 +14,7 @@
     "@aws-sdk/client-rds-data": "^3.679.0",
     "@aws-sdk/client-secrets-manager": "^3.699.0",
     "@middy/core": "^5.5.1",
+    "@middy/http-router": "^6.0.0",
     "@smithy/service-error-classification": "^3.0.10",
     "@types/aws-lambda": "^8.10.145",
     "aws-xray-sdk-core": "^3.10.1",
