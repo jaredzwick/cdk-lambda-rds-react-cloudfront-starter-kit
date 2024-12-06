@@ -9,6 +9,11 @@ import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as apigatewayv2Authorizers from "aws-cdk-lib/aws-apigatewayv2-authorizers";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
+import { Duration } from "aws-cdk-lib";
+import { Architecture } from "aws-cdk-lib/aws-lambda";
+import path = require("path");
+import { Provider } from "aws-cdk-lib/custom-resources";
+import { computeDirHash } from "./utils";
 
 export class BackendStack extends cdk.Stack {
   public readonly apiUrl: string;
@@ -20,7 +25,7 @@ export class BackendStack extends cdk.Stack {
     super(scope, id, props);
 
     const vpc = new ec2.Vpc(this, "Vpc", {
-      maxAzs: 2,
+      maxAzs: 1,
       natGateways: 1, // Adding a NAT Gateway for outbound internet access
     });
 
@@ -96,6 +101,42 @@ export class BackendStack extends cdk.Stack {
         },
       }
     );
+    console.log(`~dirName ${__dirname}`);
+    const migrationsDir = path.join(__dirname, "..", `/lambda/db/migrations`);
+    console.log("~migrationsDir ", migrationsDir);
+    const lambdaMigratorFunction = new nodeLambda.NodejsFunction(
+      this,
+      `cuddle-db-migration-function`,
+      {
+        memorySize: 128,
+        timeout: Duration.seconds(60),
+        runtime: cdk.aws_lambda.Runtime.NODEJS_18_X,
+        architecture: Architecture.ARM_64,
+        bundling: {
+          commandHooks: {
+            beforeBundling: (_, _a: string) => [],
+            beforeInstall: (_, _a: string) => [],
+            afterBundling: (_, outputDir: string) => {
+              return [
+                `mkdir -p ${outputDir}/migrations && cp -r ${migrationsDir}/* ${outputDir}/migrations`,
+              ];
+            },
+          },
+        },
+        entry: path.join(__dirname, "../lambda/db/migrate.ts"),
+        functionName: `cuddle-db-migration`,
+        handler: "handler",
+        vpc: vpc,
+        vpcSubnets: vpc.selectSubnets({
+          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+        }),
+        environment: {
+          DB_SECRET_ARN: dbSecret.secretArn,
+          DB_URL: dbInstance.dbInstanceEndpointAddress,
+          DB_NAME: "postgres",
+        },
+      }
+    );
 
     databaseSecurityGroup.addIngressRule(
       ec2.Peer.securityGroupId(
@@ -104,10 +145,34 @@ export class BackendStack extends cdk.Stack {
       ec2.Port.tcp(5432),
       "Allow Lambda access"
     );
+    databaseSecurityGroup.addIngressRule(
+      ec2.Peer.securityGroupId(
+        lambdaMigratorFunction.connections.securityGroups[0].securityGroupId
+      ),
+      ec2.Port.tcp(5432),
+      "Allow Lambda access"
+    );
 
     dbInstance.connections.addSecurityGroup(databaseSecurityGroup);
 
     dbSecret.grantRead(rdsAPIFunction);
+    dbSecret.grantRead(lambdaMigratorFunction);
+
+    const dbMigrationProvider = new Provider(this, "DbMigrationProvider", {
+      onEventHandler: lambdaMigratorFunction,
+    });
+
+    const customResource = new cdk.CustomResource(
+      this,
+      "Custom::DbSchemaMigration",
+      {
+        serviceToken: dbMigrationProvider.serviceToken,
+        resourceType: "Custom::DbSchemaMigration",
+        properties: {
+          migrationDirectoryHash: computeDirHash(migrationsDir),
+        },
+      }
+    );
 
     const cuddleAuthedIntegration = new HttpLambdaIntegration(
       "cuddleAuthedIntegration",
