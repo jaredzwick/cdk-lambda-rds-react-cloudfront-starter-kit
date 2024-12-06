@@ -18,7 +18,7 @@ function App() {
     <ThemeProvider>
       <Authenticator.Provider>
         <Router>
-          <div className="min-h-screen bg-white flex flex-col">
+          <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col">
             <Header />
             <main className="flex-grow">
               <Routes>
