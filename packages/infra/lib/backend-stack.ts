@@ -25,8 +25,20 @@ export class BackendStack extends cdk.Stack {
     super(scope, id, props);
 
     const vpc = new ec2.Vpc(this, "Vpc", {
-      maxAzs: 1,
-      natGateways: 1, // Adding a NAT Gateway for outbound internet access
+      maxAzs: 2,
+      natGateways: 0, // Adding a NAT Gateway for outbound internet access
+      subnetConfiguration: [
+        {
+          name: "Public",
+          subnetType: ec2.SubnetType.PUBLIC, // Public subnets for Lambda
+          cidrMask: 24,
+        },
+        {
+          name: "PrivateDatabase",
+          subnetType: ec2.SubnetType.PRIVATE_ISOLATED, // No outbound internet
+          cidrMask: 24,
+        },
+      ],
     });
 
     const dbSecret = new secretsmanager.Secret(this, "Secret", {
@@ -54,14 +66,14 @@ export class BackendStack extends cdk.Stack {
       ),
       vpc,
       vpcSubnets: {
-        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
       },
       securityGroups: [databaseSecurityGroup],
       allocatedStorage: 20,
       storageType: rds.StorageType.GP2,
       multiAz: false,
       publiclyAccessible: false,
-      backupRetention: cdk.Duration.days(7),
+      backupRetention: cdk.Duration.days(2), // bump this up when going live
       deleteAutomatedBackups: true,
       deletionProtection: false,
       credentials: rds.Credentials.fromSecret(dbSecret),
@@ -76,8 +88,10 @@ export class BackendStack extends cdk.Stack {
         handler: "handler",
         vpc,
         vpcSubnets: {
-          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+          subnetType: ec2.SubnetType.PUBLIC,
         },
+        allowAllOutbound: true,
+        allowPublicSubnet: true, // Enable internet access for the function
         tracing: cdk.aws_lambda.Tracing.ACTIVE,
         environment: {
           DB_SECRET_ARN: dbSecret.secretArn,
@@ -101,9 +115,8 @@ export class BackendStack extends cdk.Stack {
         },
       }
     );
-    console.log(`~dirName ${__dirname}`);
+
     const migrationsDir = path.join(__dirname, "..", `/lambda/db/migrations`);
-    console.log("~migrationsDir ", migrationsDir);
     const lambdaMigratorFunction = new nodeLambda.NodejsFunction(
       this,
       `cuddle-db-migration-function`,
@@ -128,8 +141,10 @@ export class BackendStack extends cdk.Stack {
         handler: "handler",
         vpc: vpc,
         vpcSubnets: vpc.selectSubnets({
-          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+          subnetType: ec2.SubnetType.PUBLIC,
         }),
+        allowAllOutbound: true,
+        allowPublicSubnet: true,
         environment: {
           DB_SECRET_ARN: dbSecret.secretArn,
           DB_URL: dbInstance.dbInstanceEndpointAddress,

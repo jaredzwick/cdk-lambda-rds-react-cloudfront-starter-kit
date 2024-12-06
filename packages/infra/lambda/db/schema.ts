@@ -1,4 +1,11 @@
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  boolean,
+  integer,
+} from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: uuid().primaryKey(),
@@ -9,4 +16,20 @@ export const users = pgTable("users", {
   updated_at: timestamp(),
   created_at: timestamp().defaultNow().notNull(),
   deleted_at: timestamp(),
+  about_me: text("about_me"),
+  profile_picture_1: text("profile_picture_1"),
+  profile_picture_2: text("profile_picture_2"),
+  profile_picture_3: text("profile_picture_3"),
+  profile_picture_4: text("profile_picture_4"),
+  sms_verified: boolean().default(false),
+  email_notifications_enabled: boolean().default(true),
+  sms_notifications_enabled: boolean().default(false),
+  gender: text("gender"),
+  cuddle_preferences_male: boolean().default(false),
+  cuddle_preferences_female: boolean().default(false),
+  cuddle_preferences_non_binary: boolean().default(false),
+  cuddle_preferences_all_genders: boolean().default(false),
+  hourly_rate: integer().default(60),
+  location: text("location"),
+  maximum_travel_distance: text("maximum_travel_distance"),
 });

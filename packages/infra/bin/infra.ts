@@ -2,10 +2,20 @@
 import * as cdk from "aws-cdk-lib";
 import { BackendStack } from "../lib/backend-stack";
 import { FrontendStack } from "../lib/frontend-stack";
+import { writeEnv } from "../lib/utils";
+
 const app = new cdk.App();
-const backendStack = new BackendStack(app, "BackendStack");
+const stackName = app.node.tryGetContext("stackName");
+const backendStack = new BackendStack(app, "BackendStack", {
+  stackName: `${stackName}-cuddle-backend`,
+});
+
+writeEnv(stackName).then(() => {
+  console.log("~env file written");
+});
+
 const frontendStack = new FrontendStack(app, "FrontendStack", {
-  apiUrl: backendStack.apiUrl,
+  stackName: `${stackName}-cuddle-frontend`,
 });
 
 frontendStack.addDependency(backendStack);

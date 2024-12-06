@@ -5,15 +5,9 @@ import { S3StaticWebsiteOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
 import { BlockPublicAccess, Bucket } from "aws-cdk-lib/aws-s3";
 import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
 import * as child_process from "child_process";
-export interface ApproachOneStatelessStackProps extends cdk.StackProps {
-  apiUrl: string;
-}
+
 export class FrontendStack extends cdk.Stack {
-  constructor(
-    scope: Construct,
-    id: string,
-    props?: ApproachOneStatelessStackProps
-  ) {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     const apiUrl = cdk.Fn.importValue("ApiUrl");
@@ -23,7 +17,13 @@ export class FrontendStack extends cdk.Stack {
 
     const hostingBucket = new Bucket(this, "FrontendBucket", {
       autoDeleteObjects: true,
-      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      blockPublicAccess: {
+        blockPublicAcls: false,
+        blockPublicPolicy: false,
+        ignorePublicAcls: false,
+        restrictPublicBuckets: false,
+      },
+      publicReadAccess: true,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 

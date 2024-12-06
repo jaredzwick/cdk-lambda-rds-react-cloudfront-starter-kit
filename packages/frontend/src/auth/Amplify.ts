@@ -1,12 +1,12 @@
 export const outputs = {
   Auth: {
     Cognito: {
-      userPoolId: import.meta.env.VITE_USER_POOL_ID ?? "userPoolId",
+      userPoolId: import.meta.env.VITE_UserPoolId ?? "userPoolId",
       userPoolClientId:
-        import.meta.env.VITE_USER_POOL_CLIENT_ID ??
+        import.meta.env.VITE_UserPoolClientId ??
         "<your-cognito-user-pool-client-id>",
       identityPoolId:
-        import.meta.env.VITE_IDENTITY_POOL_ID ??
+        import.meta.env.VITE_IdentityPoolId ??
         "<your-cognito-identity-pool-id>",
       loginWith: {
         email: true,
